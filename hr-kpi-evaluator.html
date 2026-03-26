@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HR KPI Evaluator — ระบบประเมินผลงาน</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F6F2;
+    --surface: #FFFFFF;
+    --surface2: #F2F1EC;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.14);
+    --text: #1A1917;
+    --text2: #6B6860;
+    --text3: #9E9C94;
+    --accent: #2D6A4F;
+    --accent-light: #D8EDE4;
+    --accent2: #1B4332;
+    --warn: #B45309;
+    --warn-light: #FEF3C7;
+    --danger: #991B1B;
+    --danger-light: #FEE2E2;
+    --info: #1D4ED8;
+    --info-light: #DBEAFE;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans Thai', 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ─── TOP BAR ─── */
+  .topbar {
+    background: var(--accent2);
+    color: #fff;
+    padding: 0 2rem;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  .topbar-brand .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #52D9A0;
+  }
+  .topbar-date {
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+  }
+
+  /* ─── LAYOUT ─── */
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* ─── PAGE HEADER ─── */
+  .page-header {
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .page-header h1 {
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .page-header p {
+    font-size: 13px;
+    color: var(--text2);
+    margin-top: 4px;
+  }
+  .badge-version {
+    font-size: 11px;
+    background: var(--accent-light);
+    color: var(--accent2);
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-weight: 500;
+  }
+
+  /* ─── CARDS ─── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* ─── FORM ROW ─── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+  }
+  .field input, .field select {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 9px 13px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+    width: 100%;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(45,106,79,0.12);
+  }
+  .field select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B6860' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+    cursor: pointer;
+  }
+
+  /* ─── POSITION PILLS ─── */
+  .pos-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 0.25rem;
+  }
+  .pos-pill {
+    padding: 7px 16px;
+    border-radius: 99px;
+    border: 1px solid var(--border2);
+    background: var(--bg);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .pos-pill:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .pos-pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* ─── KPI SECTION ─── */
+  #kpiSection { display: none; }
+
+  .kpi-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .kpi-table thead tr th {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    background: var(--surface2);
+  }
+  .kpi-table thead tr th:first-child { border-radius: var(--radius) 0 0 0; padding-left: 1rem; }
+  .kpi-table thead tr th:last-child { border-radius: 0 var(--radius) 0 0; }
+
+  .kpi-row {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  .kpi-row:hover { background: #FAFAF8; }
+  .kpi-row:last-child { border-bottom: none; }
+
+  .kpi-row td { padding: 10px 12px; vertical-align: middle; }
+  .kpi-row td:first-child { padding-left: 1rem; }
+
+  .kpi-index {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--surface2);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+  }
+  .kpi-name { font-size: 14px; font-weight: 500; color: var(--text); }
+
+  .score-cell { display: flex; align-items: center; gap: 10px; }
+  .score-stars { display: flex; gap: 4px; }
+  .star {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border2);
+    background: var(--bg);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text3);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s;
+    user-select: none;
+  }
+  .star:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .star.s1.on { background: #FEE2E2; color: #991B1B; border-color: #FCA5A5; }
+  .star.s2.on { background: #FEF3C7; color: #B45309; border-color: #FCD34D; }
+  .star.s3.on { background: #FEF9C3; color: #854D0E; border-color: #FDE047; }
+  .star.s4.on { background: #DCFCE7; color: #166534; border-color: #86EFAC; }
+  .star.s5.on { background: #D1FAE5; color: #065F46; border-color: #6EE7B7; }
+
+  .bar-mini { flex: 1; max-width: 80px; height: 5px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 99px; transition: width 0.3s, background 0.3s; background: var(--accent); }
+
+  .note-td textarea {
+    width: 100%;
+    min-width: 160px;
+    font-size: 12px;
+    font-family: inherit;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 9px;
+    color: var(--text);
+    background: var(--bg);
+    resize: none;
+    outline: none;
+    transition: border-color 0.15s;
+    line-height: 1.5;
+  }
+  .note-td textarea:focus { border-color: var(--accent); }
+
+  /* ─── SUMMARY ─── */
+  #summarySection { display: none; margin-top: 1.5rem; }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 1.25rem;
+  }
+  .metric-box {
+    background: var(--surface2);
+    border-radius: var(--radius);
+    padding: 1rem;
+    text-align: center;
+  }
+  .metric-label { font-size: 11px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+  .metric-value { font-size: 28px; font-weight: 600; color: var(--text); letter-spacing: -0.03em; }
+
+  .verdict-box {
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .verdict-icon { font-size: 20px; }
+
+  /* ─── RADAR CHART ─── */
+  .radar-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 1rem 0 0.5rem;
+  }
+
+  /* ─── BUTTONS ─── */
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 1.5rem; }
+
+  .btn {
+    padding: 9px 20px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--text);
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:hover { background: var(--surface2); border-color: var(--border2); }
+  .btn:active { transform: scale(0.98); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+  }
+
+  /* ─── PRINT ─── */
+  @media print {
+    .topbar, .btn-row, .pos-grid, .page-header .badge-version { display: none !important; }
+    .page { padding: 0; max-width: 100%; }
+    body { background: #fff; }
+    .card { box-shadow: none; border: 1px solid #ddd; }
+    #kpiSection, #summarySection { display: block !important; }
+  }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 700px) {
+    .summary-grid { grid-template-columns: repeat(2, 1fr); }
+    .kpi-table thead { display: none; }
+    .kpi-row { display: block; padding: 12px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: var(--radius); }
+    .kpi-row td { display: block; padding: 4px 0; border: none; }
+    .score-cell { flex-wrap: wrap; }
+  }
+
+  .fade-in { animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .print-header { display: none; }
+  @media print { .print-header { display: block; margin-bottom: 1rem; font-size: 13px; color: #555; } }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="dot"></div>
+    HR KPI Evaluator
+  </div>
+  <div class="topbar-date" id="dateDisplay"></div>
+</div>
+
+<!-- MAIN -->
+<div class="page">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div>
+      <h1>แบบประเมินผลงานพนักงาน</h1>
+      <p>ระบบประเมิน KPI รายตำแหน่ง — สำหรับฝ่าย HR และหัวหน้างาน</p>
+    </div>
+    <span class="badge-version">v1.0 · 2025</span>
+  </div>
+
+  <!-- EMPLOYEE INFO -->
+  <div class="card">
+    <div class="card-title">ข้อมูลพนักงาน</div>
+    <div class="form-grid">
+      <div class="field">
+        <label>ชื่อ-นามสกุล</label>
+        <input type="text" id="empName" placeholder="เช่น สมหญิง ใจดี">
+      </div>
+      <div class="field">
+        <label>รหัสพนักงาน</label>
+        <input type="text" id="empCode" placeholder="เช่น EMP-0042">
+      </div>
+      <div class="field">
+        <label>ระยะเวลาทดลองงาน</label>
+        <input type="text" id="empPeriod" placeholder="เช่น 3 เดือน">
+      </div>
+      <div class="field">
+        <label>ผู้ประเมิน</label>
+        <input type="text" id="evaluator" placeholder="ชื่อหัวหน้างาน">
+      </div>
+      <div class="field">
+        <label>วันที่ประเมิน</label>
+        <input type="date" id="evalDate">
+      </div>
+      <div class="field">
+        <label>แผนก</label>
+        <input type="text" id="empDept" placeholder="เช่น ปฏิบัติการ">
+      </div>
+    </div>
+  </div>
+
+  <!-- POSITION SELECTOR -->
+  <div class="card">
+    <div class="card-title">เลือกตำแหน่งงาน</div>
+    <div class="pos-grid" id="posGrid">
+      <div class="pos-pill" data-pos="sales">ฝ่ายขาย</div>
+      <div class="pos-pill" data-pos="graphic">กราฟิก</div>
+      <div class="pos-pill" data-pos="account">บัญชี</div>
+      <div class="pos-pill" data-pos="production">ผลิต</div>
+      <div class="pos-pill" data-pos="purchase">จัดซื้อ</div>
+      <div class="pos-pill" data-pos="warehouse">คลังสินค้า</div>
+      <div class="pos-pill" data-pos="marketing">การตลาด</div>
+    </div>
+  </div>
+
+  <!-- KPI TABLE -->
+  <div id="kpiSection" class="fade-in">
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div style="padding: 1.25rem 1.5rem 1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <div class="card-title" style="margin-bottom:0;">KPI ทั้ง 10 ข้อ — <span id="posLabel" style="color:var(--accent)"></span></div>
+        <span style="font-size:12px; color:var(--text3);">คะแนน 1 = ต่ำสุด &nbsp;|&nbsp; 5 = ดีเยี่ยม</span>
+      </div>
+      <table class="kpi-table">
+        <thead>
+          <tr>
+            <th style="width:44px;">#</th>
+            <th>KPI</th>
+            <th style="width:200px;">คะแนน (1–5)</th>
+            <th style="width:80px;">ระดับ</th>
+            <th>หมายเหตุ / ตัวอย่างพฤติกรรม</th>
+          </tr>
+        </thead>
+        <tbody id="kpiBody"></tbody>
+      </table>
+    </div>
+
+    <!-- SUMMARY -->
+    <div id="summarySection" class="fade-in">
+      <div class="card">
+        <div class="card-title">สรุปผลการประเมิน</div>
+        <div class="summary-grid">
+          <div class="metric-box">
+            <div class="metric-label">คะแนนรวม</div>
+            <div class="metric-value" id="sumTotal">—</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">เต็ม 50 คะแนน</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">เปอร์เซ็นต์</div>
+            <div class="metric-value" id="sumPct">—</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">คะแนนรวม / 100%</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">ผ่านเกณฑ์ (≥3)</div>
+            <div class="metric-value" id="sumPass" style="color:var(--accent)">—</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">จาก 10 KPI</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">ต้องพัฒนา (&lt;3)</div>
+            <div class="metric-value" id="sumFail" style="color:var(--danger)">—</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">จาก 10 KPI</div>
+          </div>
+        </div>
+        <div class="verdict-box" id="verdictBox">
+          <span class="verdict-icon" id="verdictIcon"></span>
+          <div>
+            <div id="verdictText" style="font-size:15px;font-weight:600;"></div>
+            <div id="verdictSub" style="font-size:13px;opacity:0.8;margin-top:2px;"></div>
+          </div>
+        </div>
+
+        <!-- RADAR CHART -->
+        <div class="radar-wrap">
+          <canvas id="radarChart" width="380" height="320"></canvas>
+        </div>
+      </div>
+
+      <!-- STRENGTH / DEVELOP -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="card" style="border-left:3px solid var(--accent);">
+          <div class="card-title" style="color:var(--accent);">จุดแข็ง (คะแนน ≥ 4)</div>
+          <div id="strengthList" style="font-size:13px;color:var(--text2);line-height:2;"></div>
+        </div>
+        <div class="card" style="border-left:3px solid #EF4444;">
+          <div class="card-title" style="color:#991B1B;">จุดที่ต้องพัฒนา (คะแนน ≤ 2)</div>
+          <div id="developList" style="font-size:13px;color:var(--text2);line-height:2;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="calcScore()">คำนวณผลการประเมิน</button>
+      <button class="btn" onclick="window.print()">พิมพ์ / บันทึก PDF</button>
+      <button class="btn btn-outline" onclick="clearAll()">ล้างข้อมูลทั้งหมด</button>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+const KPI_MAP = {
+  sales:{label:"ฝ่ายขาย",items:["ยอดขายเทียบเป้าหมาย","จำนวนลูกค้าใหม่ที่หาได้","อัตราการปิดการขาย","ความพึงพอใจลูกค้า (CSAT)","การติดตาม Follow-up อย่างสม่ำเสมอ","ความรู้ด้านสินค้าและบริการ","การรายงานและบันทึกข้อมูลการขาย","ทักษะการเจรจาต่อรอง","การทำงานร่วมกับทีม","การพัฒนาตนเองและเรียนรู้ต่อเนื่อง"]},
+  graphic:{label:"กราฟิก",items:["คุณภาพและความสวยงามของงาน","ความตรงต่อเวลาในการส่งงาน","ความเข้าใจ Brief และการตีโจทย์","ความคิดสร้างสรรค์และความหลากหลาย","ทักษะการใช้โปรแกรมออกแบบ","การรับ Feedback และปรับปรุงงาน","ความสามารถจัดการหลายงานพร้อมกัน","ความเรียบร้อยของไฟล์งาน","การสื่อสารกับทีมและลูกค้า","การพัฒนาทักษะและติดตามเทรนด์"]},
+  account:{label:"บัญชี",items:["ความถูกต้องของข้อมูลทางบัญชี","การส่งงบการเงินตรงเวลา","การจัดการเอกสารและการจัดเก็บ","ความเข้าใจมาตรฐานบัญชี (TFRS)","การตรวจสอบและยืนยันรายการ","การประสานงานกับหน่วยงานภายนอก","การวิเคราะห์ต้นทุนและงบประมาณ","ความรับผิดชอบและซื่อสัตย์","การใช้โปรแกรมบัญชี","การพัฒนาตนเองและอัปเดตกฎหมายภาษี"]},
+  production:{label:"ผลิต",items:["ปริมาณการผลิตเทียบเป้าหมาย","อัตราของเสีย (Defect Rate)","ความตรงต่อเวลาในการผลิต","การดูแลรักษาเครื่องจักร","การปฏิบัติตามมาตรฐานความปลอดภัย","ความสามารถแก้ปัญหาเฉพาะหน้า","การทำงานร่วมกับสายการผลิต","ประสิทธิภาพการใช้วัตถุดิบ","การรายงานปัญหาและเหตุขัดข้อง","การพัฒนาทักษะและเรียนรู้กระบวนการใหม่"]},
+  purchase:{label:"จัดซื้อ",items:["ความสามารถในการต่อรองราคา","ความตรงต่อเวลาในการสั่งซื้อ","คุณภาพ Supplier ที่เลือก","ความถูกต้องของเอกสารจัดซื้อ","การบริหารงบประมาณการจัดซื้อ","การติดตามสถานะการสั่งซื้อ","การประสานงานกับแผนกที่เกี่ยวข้อง","ความรู้ด้านสินค้าและตลาด","การจัดทำฐานข้อมูล Supplier","การพัฒนากระบวนการจัดซื้อ"]},
+  warehouse:{label:"คลังสินค้า",items:["ความถูกต้องในการตรวจรับสินค้า","ความแม่นยำในการตัดสต๊อก","การจัดระเบียบและจัดเก็บสินค้า","ความตรงต่อเวลาในการจัดเตรียมสินค้า","ความถูกต้องของเอกสารเข้า-ออก","การประสานงานกับฝ่ายจัดส่ง","การดูแลความปลอดภัยของคลัง","ทักษะการใช้ระบบ/โปรแกรมคลัง","การแก้ไขข้อผิดพลาดและรายงาน","การพัฒนาตนเองและเรียนรู้ระบบใหม่"]},
+  marketing:{label:"การตลาด",items:["ประสิทธิผลของแคมเปญ (ROI)","ความสร้างสรรค์ในการนำเสนอ","การวิเคราะห์ข้อมูลและ Insights","การบริหารช่องทาง Online/Offline","ความตรงต่อเวลาในการส่งงาน","การทำงานร่วมกับทีมขายและกราฟิก","การติดตามเทรนด์และคู่แข่ง","ทักษะการสื่อสารและการเขียน","การบริหารงบประมาณการตลาด","การพัฒนากลยุทธ์และแผนงาน"]}
+};
+
+let currentPos = null;
+let scores = Array(10).fill(0);
+
+// Date
+const d = new Date();
+document.getElementById('dateDisplay').textContent = d.toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+document.getElementById('evalDate').value = d.toISOString().split('T')[0];
+
+// Position pills
+document.querySelectorAll('.pos-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.pos-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    loadKPI(pill.dataset.pos);
+  });
+});
+
+function loadKPI(pos) {
+  currentPos = pos;
+  scores = Array(10).fill(0);
+  const data = KPI_MAP[pos];
+  document.getElementById('posLabel').textContent = data.label;
+  const body = document.getElementById('kpiBody');
+  body.innerHTML = data.items.map((kpi, i) => `
+    <tr class="kpi-row" id="row${i}">
+      <td><div class="kpi-index">${i+1}</div></td>
+      <td><div class="kpi-name">${kpi}</div></td>
+      <td>
+        <div class="score-cell">
+          <div class="score-stars" id="stars${i}">
+            ${[1,2,3,4,5].map(s => `<div class="star s${s}" onclick="setScore(${i},${s})" title="${s}">${s}</div>`).join('')}
+          </div>
+        </div>
+      </td>
+      <td>
+        <div class="bar-mini"><div class="bar-fill" id="bar${i}" style="width:0%"></div></div>
+      </td>
+      <td class="note-td">
+        <textarea id="note${i}" rows="2" placeholder="หมายเหตุ..."></textarea>
+      </td>
+    </tr>
+  `).join('');
+  document.getElementById('kpiSection').style.display = 'block';
+  document.getElementById('summarySection').style.display = 'none';
+  document.getElementById('kpiSection').classList.add('fade-in');
+}
+
+function setScore(i, val) {
+  scores[i] = val;
+  const stars = document.querySelectorAll(`#stars${i} .star`);
+  stars.forEach((s, idx) => {
+    s.className = `star s${idx+1}${idx < val ? ' on' : ''}`;
+  });
+  const pct = (val / 5) * 100;
+  const bar = document.getElementById('bar' + i);
+  bar.style.width = pct + '%';
+  const colors = ['', '#EF4444','#F59E0B','#EAB308','#22C55E','#10B981'];
+  bar.style.background = colors[val] || '#ccc';
+}
+
+function calcScore() {
+  if (!currentPos) return;
+  const total = scores.reduce((a,b) => a+b, 0);
+  const pct = Math.round(total / 50 * 100);
+  const pass = scores.filter(s => s >= 3).length;
+  const fail = scores.filter(s => s > 0 && s < 3).length;
+
+  document.getElementById('sumTotal').textContent = total + '/50';
+  document.getElementById('sumPct').textContent = pct + '%';
+  document.getElementById('sumPass').textContent = pass;
+  document.getElementById('sumFail').textContent = fail;
+
+  const vBox = document.getElementById('verdictBox');
+  const vText = document.getElementById('verdictText');
+  const vSub = document.getElementById('verdictSub');
+  const vIcon = document.getElementById('verdictIcon');
+
+  if (pct >= 80) {
+    vBox.style.cssText = 'background:#D1FAE5;border-radius:var(--radius);padding:1rem 1.25rem;display:flex;align-items:center;gap:10px;';
+    vText.style.color = '#065F46'; vText.textContent = 'ผ่านการประเมิน — ระดับดีเยี่ยม';
+    vSub.style.color = '#047857'; vSub.textContent = 'พนักงานมีผลงานเกินความคาดหวัง พร้อมรับผิดชอบเพิ่มเติม';
+    vIcon.textContent = '★';
+  } else if (pct >= 70) {
+    vBox.style.cssText = 'background:#DCFCE7;border-radius:var(--radius);padding:1rem 1.25rem;display:flex;align-items:center;gap:10px;';
+    vText.style.color = '#166534'; vText.textContent = 'ผ่านการประเมิน — ระดับดี';
+    vSub.style.color = '#15803D'; vSub.textContent = 'ผลงานอยู่ในระดับที่น่าพอใจ ควรพัฒนาต่อเนื่อง';
+    vIcon.textContent = '✓';
+  } else if (pct >= 60) {
+    vBox.style.cssText = 'background:#FEF3C7;border-radius:var(--radius);padding:1rem 1.25rem;display:flex;align-items:center;gap:10px;';
+    vText.style.color = '#92400E'; vText.textContent = 'ผ่านเกณฑ์ขั้นต่ำ — ต้องพัฒนา';
+    vSub.style.color = '#B45309'; vSub.textContent = 'ผ่านเกณฑ์ขั้นต่ำ แต่ยังมีหลายด้านที่ต้องปรับปรุงอย่างต่อเนื่อง';
+    vIcon.textContent = '△';
+  } else {
+    vBox.style.cssText = 'background:#FEE2E2;border-radius:var(--radius);padding:1rem 1.25rem;display:flex;align-items:center;gap:10px;';
+    vText.style.color = '#991B1B'; vText.textContent = 'ไม่ผ่านเกณฑ์ — ต้องการแผนพัฒนาเร่งด่วน';
+    vSub.style.color = '#B91C1C'; vSub.textContent = 'คะแนนต่ำกว่าเกณฑ์ ควรจัดทำ PIP และติดตามผลอย่างใกล้ชิด';
+    vIcon.textContent = '✗';
+  }
+
+  // Strengths & Develop
+  const items = KPI_MAP[currentPos].items;
+  const strengths = items.filter((_, i) => scores[i] >= 4);
+  const develop = items.filter((_, i) => scores[i] > 0 && scores[i] <= 2);
+  document.getElementById('strengthList').innerHTML = strengths.length
+    ? strengths.map(s => `<div>• ${s}</div>`).join('')
+    : '<div style="color:var(--text3);">— ยังไม่มี KPI ที่ได้คะแนนสูงพิเศษ —</div>';
+  document.getElementById('developList').innerHTML = develop.length
+    ? develop.map(s => `<div>• ${s}</div>`).join('')
+    : '<div style="color:var(--text3);">— ไม่มี KPI ที่ต่ำกว่าเกณฑ์ —</div>';
+
+  document.getElementById('summarySection').style.display = 'block';
+  drawRadar(scores, KPI_MAP[currentPos].items);
+  document.getElementById('summarySection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function drawRadar(scores, labels) {
+  const canvas = document.getElementById('radarChart');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2 + 10;
+  const R = Math.min(W, H) / 2 - 50;
+  const N = 10;
+  const step = (Math.PI * 2) / N;
+  ctx.clearRect(0, 0, W, H);
+
+  const getXY = (i, r) => [
+    cx + r * Math.cos(step * i - Math.PI / 2),
+    cy + r * Math.sin(step * i - Math.PI / 2)
+  ];
+
+  // Grid rings
+  for (let ring = 1; ring <= 5; ring++) {
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const [x, y] = getXY(i, R * ring / 5);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(0,0,0,0.07)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    if (ring === 5 || ring === 3) {
+      ctx.fillStyle = 'rgba(0,0,0,0.12)';
+      ctx.font = '10px IBM Plex Sans Thai, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(ring, cx + 4, cy - R * ring / 5 + 3);
+    }
+  }
+
+  // Spokes
+  for (let i = 0; i < N; i++) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    const [x, y] = getXY(i, R);
+    ctx.lineTo(x, y);
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Data polygon
+  ctx.beginPath();
+  for (let i = 0; i < N; i++) {
+    const r = R * (scores[i] / 5);
+    const [x, y] = getXY(i, r);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(45,106,79,0.15)';
+  ctx.fill();
+  ctx.strokeStyle = '#2D6A4F';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Dots
+  for (let i = 0; i < N; i++) {
+    const r = R * (scores[i] / 5);
+    const [x, y] = getXY(i, r);
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#2D6A4F';
+    ctx.fill();
+  }
+
+  // Labels (short)
+  const shortLabels = labels.map(l => l.length > 10 ? l.substring(0, 10) + '…' : l);
+  ctx.fillStyle = '#6B6860';
+  ctx.font = '11px IBM Plex Sans Thai, sans-serif';
+  for (let i = 0; i < N; i++) {
+    const [x, y] = getXY(i, R + 22);
+    ctx.textAlign = 'center';
+    ctx.fillText(shortLabels[i], x, y + 4);
+  }
+}
+
+function clearAll() {
+  if (!confirm('ล้างข้อมูลทั้งหมด?')) return;
+  scores = Array(10).fill(0);
+  for (let i = 0; i < 10; i++) {
+    document.querySelectorAll(`#stars${i} .star`).forEach(s => {
+      const n = parseInt(s.textContent);
+      s.className = `star s${n}`;
+    });
+    const bar = document.getElementById('bar' + i);
+    if (bar) { bar.style.width = '0%'; bar.style.background = '#ccc'; }
+    const note = document.getElementById('note' + i);
+    if (note) note.value = '';
+  }
+  document.getElementById('summarySection').style.display = 'none';
+}
+</script>
+</body>
+</html>
